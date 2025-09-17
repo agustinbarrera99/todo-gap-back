@@ -6,7 +6,7 @@ let schema = new Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    projects: [{ type: Types.ObjectId, ref: "projects" }]
+    projects: [{ type: Types.ObjectId, ref: "Projects" }]
 }, {
     timestamps: true
 })

@@ -1,4 +1,8 @@
 import Users from "./models/users.model.js";
+import Tasks from "./models/task.model.js";
+import Projects from "./models/project.model.js";
+import {ObjectId} from "mongodb"
+
 
 class MongoManager {
     constructor(model) { 
@@ -22,8 +26,19 @@ class MongoManager {
     async readByEmail(email) {
         return await this.model.find({ email: email }).lean();
     }
+async readByUser(userId) {
+    const userObjectId = new ObjectId(userId);
+    const projects = await this.model.find({ 
+        members: { $in: [userObjectId] } 
+    }).lean();
+
+    return projects;
+}
 }
 
 const usersManager = new MongoManager(Users);
-export default usersManager;
+const tasksManager = new MongoManager(Tasks);
+const projectsManager = new MongoManager(Projects);
+
+export {usersManager, tasksManager, projectsManager};
 

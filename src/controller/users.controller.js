@@ -1,4 +1,4 @@
-import usersManager from "../data/mongoManager.js";
+import {usersManager} from "../data/mongoManager.js";
 
 class UsersController {
     constructor(model) {
@@ -7,6 +7,11 @@ class UsersController {
     read = async (req, res, next) => {
         try {
             const response = await this.controller.read();
+            if (!response) {
+                let error = new Error("No se encontraron usuarios")
+                error.statusCode = 404
+                throw error
+            }
             return res.json({ statusCode: 200, data: response });
         } catch (error) {
             next(error);
@@ -17,7 +22,9 @@ class UsersController {
             const { uid } = req.params;
             const response = await this.controller.readOne(uid);
             if (!response) {
-                return res.json({ statusCode: 404, message: "User not found" });
+                let error = new Error(`No se encontro ningun usuario con el ID: ${uid}`)
+                error.statusCode = 404
+                throw error
             }
             return res.json({ statusCode: 200, data: response });
         } catch (error) {
@@ -28,6 +35,11 @@ class UsersController {
         try {
             const data = req.body;
             const response = await this.controller.create(data);
+            if (!response) {
+                let error = new Error("Error al crear el usuario")
+                error.statusCode = 400
+                throw error
+            }
             return res.json({ statusCode: 201, data: response });
         } catch (error) {
             next(error);
@@ -39,7 +51,9 @@ class UsersController {
             const data = req.body;
             const response = await this.controller.update(uid, data);
             if (!response) {
-                return res.json({ statusCode: 404, message: "User not found" });
+                let error = new Error("No se encontro el usuario a actualizar")
+                error.statusCode = 404;
+                throw error
             }
             return res.json({ statusCode: 200, data: response });
         } catch (error) {
@@ -51,7 +65,9 @@ class UsersController {
             const { uid } = req.params;
             const response = await this.controller.destroy(uid);
             if (!response) {
-                return res.json({ statusCode: 404, message: "User not found" });
+                let error = new Error("No se encontro el usuario a eliminar")
+                error.statusCode = 404
+                throw error
             }   
             return res.json({ statusCode: 200, data: response });
         } catch (error) {
