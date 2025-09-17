@@ -36,7 +36,7 @@ class AuthController {
       const token = jwt.sign(payload, process.env.SECRET_KEY, {
         expiresIn: "1h",
       });
-      return res.json({ statusCode: 200, message: "Se ha iniciado sesion correctamente", token });
+      return res.json({ statusCode: 200, message: "Se ha iniciado sesion correctamente", token, userId: user._id });
     } catch (error) {
       next(error);
     }

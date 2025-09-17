@@ -7,7 +7,7 @@ const projectsRouter = Router();
 projectsRouter.get('/', authMiddleware, read)
 projectsRouter.get('/:pid', readOne)
 projectsRouter.put('/:pid', update)
-projectsRouter.delete('/:pid', destroy)
+projectsRouter.delete('/:pid', authMiddleware,destroy)
 projectsRouter.post('/', authMiddleware,create) 
 
 export default projectsRouter;

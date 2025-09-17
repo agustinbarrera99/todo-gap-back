@@ -42,7 +42,6 @@ read = async (req, res, next) => {
     }
     create = async (req, res, next) => {
         try {
-            console.log(req.user)
             const data = req.body
             console.log(data)
             data.owner = req.user.id
@@ -92,10 +91,11 @@ update = async (req, res, next) => {
     destroy = async (req, res, next) => {
         try {
             const { pid } = req.params;
-            const userId = req.user._id;
-
+            const userId = req.user.id;
             const project = await this.controller.readOne(pid);
-            if (!project || project.ownerId.toString() !== userId.toString()) {
+            console.log(project.owner._id)
+            console.log(userId)
+            if (!project || project.owner._id.toString() !== userId) {
                 const error = new Error("No tienes permiso para eliminar este proyecto")
                 error.statusCode = 403
                 throw error

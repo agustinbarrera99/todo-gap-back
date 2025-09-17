@@ -3,7 +3,7 @@ import {model, Schema, Types} from 'mongoose';
 let collection = 'projects';
 
 const schema = new Schema({
-  name: {type: String, required: true},
+  title: {type: String, required: true},
   description: {type: String, required: true},
     owner: {type: Types.ObjectId, ref: 'users', required: true},
     members: [{type: Types.ObjectId, ref: 'users', required: true}],
