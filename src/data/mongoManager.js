@@ -16,7 +16,6 @@ class MongoManager {
         .findById(id)
         .populate("owner", "username email")
         .populate("members", "username email")
-        // NO poblamos 'tasks' aquí para evitar el cuelgue.
         .lean();
     }
     return await this.model.findById(id).lean();
@@ -43,6 +42,38 @@ class MongoManager {
 
     return projects;
   }
+    async searchUsers(searchTerm) {
+        if (this.model.modelName !== "User" || !searchTerm) {
+            return []; 
+        }
+        
+        const trimmedQuery = searchTerm.trim();
+        if (trimmedQuery.length < 3) {
+             return [];
+        }
+
+        const regex = new RegExp(trimmedQuery, 'i'); 
+        
+        const filter = {
+            $or: [
+                { name: { $regex: regex } },
+                { username: { $regex: regex } },
+                { email: { $regex: regex } }
+            ]
+        };
+        
+        // Usamos this.read(filter) para aplicar la búsqueda
+        const users = await this.read(filter); 
+
+        // Opcional: Limitar la cantidad de resultados y seleccionar campos después del read()
+        // Si read() no permite select/limit, los aplicamos aquí:
+        return users.slice(0, 10).map(user => ({
+             _id: user._id,
+             name: user.name,
+             username: user.username,
+             email: user.email
+        }));
+    }
 }
 
 const usersManager = new MongoManager(Users);

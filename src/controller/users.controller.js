@@ -6,8 +6,12 @@ class UsersController {
     }
     read = async (req, res, next) => {
         try {
-            const response = await this.controller.read();
-            if (!response) {
+            const filter = {}
+            if (req.query.username) {
+                filter.username = new RegExp(req.query.username.trim(), "i")
+            }
+             const response = await this.controller.read(filter); 
+            if (!response || response.length === 0) { // Añadí verificación de array vacío
                 let error = new Error("No se encontraron usuarios")
                 error.statusCode = 404
                 throw error

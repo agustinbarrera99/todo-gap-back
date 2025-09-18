@@ -40,13 +40,20 @@ read = async (req, res, next) => {
             next(error)
         }
     }
-    create = async (req, res, next) => {
-        try {
-            const data = req.body
-            console.log(data)
-            data.owner = req.user.id
-            data.members = [req.user.id]
-            const response = await this.controller.create(data)
+create = async (req, res, next) => {
+    try {
+        const data = req.body 
+        const creatorId = req.user.id 
+        
+        const sentMembers = Array.isArray(data.members) ? data.members : [];
+        
+
+        const uniqueMemberIds = new Set([creatorId, ...sentMembers]);
+        
+        data.owner = creatorId; 
+        data.members = Array.from(uniqueMemberIds);
+        
+        const response = await this.controller.create(data);
             if (!response) {
                 let error = new Error("Error al crear el proyecto")
                 error.statusCode = 400
