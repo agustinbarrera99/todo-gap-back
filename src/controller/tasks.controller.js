@@ -130,13 +130,14 @@ class TasksController {
       const { pid, tid } = req.params;
       const data = req.body;
       const userId = req.user.id;
-
       const project = await this.projectsModel.readOne(pid);
       if (!project) {
         const error = new Error("Proyecto no encontrado");
         error.statusCode = 404;
         throw error;
       }
+
+      const task = this.tasksModel.readOne(tid)
 
       const isMember = project.members.some(
         (memberId) => memberId.toString() === userId.toString()
