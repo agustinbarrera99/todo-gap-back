@@ -6,11 +6,11 @@ const schema = new Schema({
   description: { type: String, required: true },
   status: {
     type: String,
-    enum: ["todo", "in-progress", "done"],
-    default: "todo",
+    enum: ["Pendiente", "En progreso", "A verificar","Completada"],
+    default: "Pendiente",
   },
-  project: { type: Types.ObjectId, ref: "Projects", required: true },
-  assignedTo: { type: Types.ObjectId, ref: "Users" },
+  project: { type: Types.ObjectId, ref: "projects", required: true },
+  assignedTo: { type: Types.ObjectId, ref: "users" },
   priority: {
     type: String,
     enum: ["low", "medium", "high"],
@@ -18,16 +18,6 @@ const schema = new Schema({
   },
 }, {timestamps: true});
 
-schema.pre("find", function () {
-  this.populate("project", "name description owner");
-  this.populate("assignedTo", "username email");
-
-});
-
-schema.pre("findOne", function () {
-  this.populate("project", "name description owner");
-  this.populate("assignedTo", "username email");
-});
 
 const Tasks = model(collection, schema);
 export default Tasks;

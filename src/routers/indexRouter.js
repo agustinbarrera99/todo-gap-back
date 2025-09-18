@@ -9,6 +9,6 @@ const indexRouter = Router();
 indexRouter.use('/users', usersRouter);
 indexRouter.use('/auth', authRouter);
 indexRouter.use("/projects", projectsRouter);
-indexRouter.use("tasks", tasksRouter)
+indexRouter.use("/tasks", tasksRouter)
 
 export default indexRouter;

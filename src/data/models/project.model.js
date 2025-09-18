@@ -11,17 +11,5 @@ const schema = new Schema({
     createdAt: {type: Date, default: Date.now},
 }, {timestamps: true});
 
-schema.pre("find", function() {
-    this.populate("owner", "username email")
-    this.populate("members", "username email")
-    this.populate("tasks", "title description status assignedTo")
-})
-
-schema.pre("findOne", function() {
-    this.populate("owner", "username email")
-    this.populate("members", "username email")
-    this.populate("tasks", "title description status assignedTo")
-})
-
 const Project = model(collection, schema);
 export default Project;

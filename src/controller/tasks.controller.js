@@ -10,15 +10,17 @@ class TasksController {
     try {
       const { pid } = req.params;
       const data = req.body;
-      const userId = req.user._id;
+      const userId = req.user.id;
       const project = await this.projectsModel.readOne(pid);
+      console.log(project)
       if (!project) {
         const error = new Error("Proyecto no encontrado");
         error.statusCode = 404;
         throw error;
       }
+      console.log(project);
       const isMember = project.members.some(
-        (memberId) => memberId.toString() === userId.toString()
+        (memberId) => memberId._id.toString() === userId.toString()
       );
       if (!isMember) {
         const error = new Error(
@@ -28,32 +30,39 @@ class TasksController {
         throw error;
       }
       data.project = pid;
-      const newTask = await this.tasksModel.create(data)
-      project.tasks.push(newTask._id)
-      await this.projectsModel.update(pid, project)
+      const newTask = await this.tasksModel.create(data);
+      project.tasks.push(newTask._id);
+      await this.projectsModel.update(pid, project);
       return res.json({
         statusCode: 201,
-        response: newTask
-      })
+        response: newTask,
+      });
     } catch (error) {
-        next(error)
+      next(error);
     }
   };
   read = async (req, res, next) => {
     try {
+      // 1. Obtener el ID del proyecto de la URL
       const { pid } = req.params;
-      const userId = req.user._id;
+      const userId = req.user.id; // Asumiendo que has unificado a req.user.id
 
+      // 2. CORRECCIÓN: Usar readOne para obtener UN solo proyecto por ID
+      // (Asumo que projectsManager tiene un readOne que acepta el ID)
       const project = await this.projectsModel.readOne(pid);
+      console.log(project)
+
       if (!project) {
         const error = new Error("Proyecto no encontrado");
         error.statusCode = 404;
         throw error;
       }
 
+      // 3. Verificación de Membresía (usando member._id ya que está populado)
       const isMember = project.members.some(
-        (memberId) => memberId.toString() === userId.toString()
+        (member) => member._id.toString() === userId.toString()
       );
+
       if (!isMember) {
         const error = new Error(
           "No tienes permisos para ver las tareas de este proyecto"
@@ -62,7 +71,9 @@ class TasksController {
         throw error;
       }
 
+      // 4. FILTRADO CLAVE: Llama a tasksManager.read() y le pasa el filtro { project: pid }
       const tasks = await this.tasksModel.read({ project: pid });
+
       return res.json({
         statusCode: 200,
         response: tasks,
@@ -71,10 +82,11 @@ class TasksController {
       next(error);
     }
   };
+
   readOne = async (req, res, next) => {
     try {
       const { pid, tid } = req.params;
-      const userId = req.user._id;
+      const userId = req.user.id;
 
       const project = await this.projectsModel.readOne(pid);
       if (!project) {
@@ -87,9 +99,7 @@ class TasksController {
         (memberId) => memberId.toString() === userId.toString()
       );
       if (!isMember) {
-        const error = new Error(
-          "No tienes permisos para ver esta tarea"
-        );
+        const error = new Error("No tienes permisos para ver esta tarea");
         error.statusCode = 403;
         throw error;
       }
@@ -119,7 +129,7 @@ class TasksController {
     try {
       const { pid, tid } = req.params;
       const data = req.body;
-      const userId = req.user._id;
+      const userId = req.user.id;
 
       const project = await this.projectsModel.readOne(pid);
       if (!project) {
@@ -157,7 +167,7 @@ class TasksController {
   destroy = async (req, res, next) => {
     try {
       const { pid, tid } = req.params;
-      const userId = req.user._id;
+      const userId = req.user.id;
       const project = await this.projectsModel.readOne(pid);
       if (!project) {
         const error = new Error("Proyecto no encontrado");
@@ -169,9 +179,7 @@ class TasksController {
         (memberId) => memberId.toString() === userId.toString()
       );
       if (!isMember) {
-        const error = new Error(
-          "No tienes permisos para eliminar esta tarea"
-        );
+        const error = new Error("No tienes permisos para eliminar esta tarea");
         error.statusCode = 403;
         throw error;
       }
@@ -197,6 +205,6 @@ class TasksController {
   };
 }
 
-const tasksController = new TasksController(tasksManager, projectsManager)
+const tasksController = new TasksController(tasksManager, projectsManager);
 
-export const {read, readOne, create, update, destroy} = tasksController
+export const { read, readOne, create, update, destroy } = tasksController;
