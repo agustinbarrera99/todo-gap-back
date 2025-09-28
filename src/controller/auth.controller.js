@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { createHash, isValidPassword } from "../utils/hash.js";
 import { verificationCode } from "../utils/verificationCode.js";
 import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
+import sendPasswordResetEmail from "../utils/sendPasswordResetEmail.js";
 
 class AuthController {
   constructor(model) {
@@ -98,7 +99,7 @@ class AuthController {
         verification_code,
         is_verified: false,
       };
-      await sendVerificationEmail(email, verification_code)
+      await sendVerificationEmail(email, verification_code);
       const response = await this.controller.create(newUser);
       return res.json({
         statusCode: 201,
@@ -133,14 +134,77 @@ class AuthController {
 
       return res.json({
         statusCode: 200,
-        message: "Cuenta verificada exitosamente"
-      })
-
+        message: "Cuenta verificada exitosamente",
+      });
     } catch (error) {
       next(error);
     }
   };
+  forgotPassword = async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      const users = await this.controller.readByEmail(email);
+
+      if (users.length === 0) {
+        // Por seguridad, siempre responde con éxito incluso si el email no existe
+        return res.json({
+          statusCode: 200,
+          message:
+            "Si el email está registrado, recibirás un enlace de restauración.",
+        });
+      }
+
+      const user = users[0];
+      const resetToken = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
+        expiresIn: "1h",
+      });
+
+      // 2. Opcional pero muy recomendable: Guardar el token (o su hash) y su expiración en el modelo de usuario.
+      // Para esto, tu modelo de usuario (users.model.js) necesitaría campos como `resetPasswordToken` y `resetPasswordExpires`.
+
+      // 3. Enviar el email
+      await sendPasswordResetEmail(email, resetToken);
+
+      return res.json({
+        statusCode: 200,
+        message:
+          "Se ha enviado un correo con instrucciones para restablecer tu contraseña.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+      resetPassword = async (req, res, next) => {
+        try {
+            const { token } = req.params;
+            const { newPassword } = req.body;
+
+            // 1. Verificar y decodificar el token
+            const decoded = jwt.verify(token, process.env.SECRET_KEY);
+            const userId = decoded.id;
+
+            // 2. Buscar al usuario y verificar si el token es válido (opcional si no lo guardaste en BD)
+            const user = await this.controller.readOne(userId);
+            if (!user) {
+                 const error = new Error("Token inválido o expirado.");
+                 error.statusCode = 400;
+                 throw error;
+            }
+
+            // 3. Hashear la nueva contraseña y actualizar
+            const hashedPassword = createHash(newPassword);
+            await this.controller.update(userId, { password: hashedPassword /*, resetPasswordToken: undefined, resetPasswordExpires: undefined */ });
+
+            return res.json({ statusCode: 200, message: "Contraseña restablecida exitosamente." });
+        } catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                error.statusCode = 401;
+                error.message = "El enlace ha expirado. Por favor, solicita un nuevo restablecimiento.";
+            }
+            next(error);
+        }
+    };
 }
 
 const authController = new AuthController(usersManager);
-export const { login, logout, register, verifyEmail } = authController;
+export const { login, logout, register, verifyEmail, resetPassword, forgotPassword } = authController;
