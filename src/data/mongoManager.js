@@ -7,16 +7,25 @@ class MongoManager {
   constructor(model) {
     this.model = model;
   }
-  async read(filter = {}) {
-    return await this.model.find(filter).lean();
-  }
+  async read(filter = {}) {
+    if (this.model.modelName === "tasks") {
+      return await this.model
+        .find(filter)
+        .populate("assignedTo", "username email") 
+        .lean();
+    }
+    return await this.model.find(filter).lean();
+  }
+
   async readOne(id) {
-    if (this.model.modelName === "Project") {
-      return await this.model
-        .findById(id)
+    if (this.model.modelName === "projects") {
+      const projects = await this.model
+        .find({ _id: id }) 
         .populate("owner", "username email")
         .populate("members", "username email")
         .lean();
+
+      return projects.length > 0 ? projects[0] : null;
     }
     return await this.model.findById(id).lean();
   }
@@ -24,7 +33,21 @@ class MongoManager {
     return await this.model.create(data);
   }
   async update(id, data) {
-    return await this.model.findByIdAndUpdate(id, data, { new: true });
+    let updatedProject = await this.model.findByIdAndUpdate(id, data, {
+      new: true,
+    });
+
+    if (this.model.modelName === "projects" && updatedProject) {
+      updatedProject = await this.model
+        .findById(id)
+        .populate("owner", "username email")
+        .populate("members", "username email")
+        .lean(); 
+
+      return updatedProject;
+    }
+
+    return updatedProject;
   }
   async destroy(id) {
     return await this.model.findByIdAndDelete(id);
@@ -38,42 +61,41 @@ class MongoManager {
       .find({
         members: { $in: [userObjectId] },
       })
+      .populate("owner", "username")
+      .populate("members", "username email")
       .lean();
 
     return projects;
   }
-    async searchUsers(searchTerm) {
-        if (this.model.modelName !== "User" || !searchTerm) {
-            return []; 
-        }
-        
-        const trimmedQuery = searchTerm.trim();
-        if (trimmedQuery.length < 3) {
-             return [];
-        }
-
-        const regex = new RegExp(trimmedQuery, 'i'); 
-        
-        const filter = {
-            $or: [
-                { name: { $regex: regex } },
-                { username: { $regex: regex } },
-                { email: { $regex: regex } }
-            ]
-        };
-        
-        // Usamos this.read(filter) para aplicar la búsqueda
-        const users = await this.read(filter); 
-
-        // Opcional: Limitar la cantidad de resultados y seleccionar campos después del read()
-        // Si read() no permite select/limit, los aplicamos aquí:
-        return users.slice(0, 10).map(user => ({
-             _id: user._id,
-             name: user.name,
-             username: user.username,
-             email: user.email
-        }));
+  async searchUsers(searchTerm) {
+    if (this.model.modelName !== "User" || !searchTerm) {
+      return [];
     }
+
+    const trimmedQuery = searchTerm.trim();
+    if (trimmedQuery.length < 3) {
+      return [];
+    }
+
+    const regex = new RegExp(trimmedQuery, "i");
+
+    const filter = {
+      $or: [
+        { name: { $regex: regex } },
+        { username: { $regex: regex } },
+        { email: { $regex: regex } },
+      ],
+    };
+
+    const users = await this.read(filter);
+
+    return users.slice(0, 10).map((user) => ({
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+    }));
+  }
 }
 
 const usersManager = new MongoManager(Users);
