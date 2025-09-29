@@ -11,5 +11,6 @@ const schema = new Schema({
     createdAt: {type: Date, default: Date.now},
 }, {timestamps: true});
 
+
 const Project = model(collection, schema);
 export default Project;

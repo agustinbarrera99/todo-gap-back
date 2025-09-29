@@ -12,13 +12,11 @@ class TasksController {
       const data = req.body;
       const userId = req.user.id;
       const project = await this.projectsModel.readOne(pid);
-      console.log(project)
       if (!project) {
         const error = new Error("Proyecto no encontrado");
         error.statusCode = 404;
         throw error;
       }
-      console.log(project);
       const isMember = project.members.some(
         (memberId) => memberId._id.toString() === userId.toString()
       );
@@ -43,14 +41,9 @@ class TasksController {
   };
   read = async (req, res, next) => {
     try {
-      // 1. Obtener el ID del proyecto de la URL
       const { pid } = req.params;
-      const userId = req.user.id; // Asumiendo que has unificado a req.user.id
-
-      // 2. CORRECCIÓN: Usar readOne para obtener UN solo proyecto por ID
-      // (Asumo que projectsManager tiene un readOne que acepta el ID)
+      const userId = req.user.id; 
       const project = await this.projectsModel.readOne(pid);
-      console.log(project)
 
       if (!project) {
         const error = new Error("Proyecto no encontrado");
@@ -139,8 +132,13 @@ class TasksController {
 
       const task = this.tasksModel.readOne(tid)
 
+      console.log(userId)
+      project.members.forEach(member => {
+        console.log(member._id)
+      });
+
       const isMember = project.members.some(
-        (memberId) => memberId.toString() === userId.toString()
+        (memberId) => memberId._id == userId
       );
       if (!isMember) {
         const error = new Error(
